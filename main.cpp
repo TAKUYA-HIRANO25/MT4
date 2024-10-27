@@ -1,16 +1,76 @@
+#define NOMINMAX
+#define _USE_MATH_DEFINES
 #include <Novice.h>
+#include <cassert>
+#include <cmath>
+const char kWindowTitle[] = "LE2C_19_ヒラノ＿タクヤ";
 
-const char kWindowTitle[] = "LC1C_21_ヒラノ＿タクヤ";
+struct Vector3 {
+	float x, y, z;
+};
+
+struct Matrix4x4 {
+	float m[4][4];
+};
+
+float Dot(const Vector3& v1, const Vector3& v2) { return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z; }
+float Length(const Vector3& v) { return std::sqrt(Dot(v, v)); }
+
+
+Vector3 Normalize(const Vector3& v) {
+	float length = Length(v);
+	assert(length != 0.0f);
+	return { v.x / length, v.y / length, v.z / length };
+}
+
+Matrix4x4 MakeRotateAxisAngle(const Vector3& axis, float angle) {
+
+
+	//資料p20を参考に中身を埋める。nはaxisのこと
+	float cos = std::cos(angle);
+	float sin = std::sin(angle);
+
+	Matrix4x4 rotateMatrix = {};
+	rotateMatrix.m[0][0] = (axis.x * axis.x) * (1 - std::cos(angle)) + std::cos(angle);
+	rotateMatrix.m[0][1] = axis.x * (axis.y * (1 - std::cos(angle))) + (axis.z * std::sin(angle));
+	rotateMatrix.m[0][2] = axis.x * (axis.z * (1 - std::cos(angle))) - (axis.y * std::sin(angle));
+
+	rotateMatrix.m[1][0] = axis.x * (axis.y * (1 - std::cos(angle))) - (axis.z * std::sin(angle));
+	rotateMatrix.m[1][1] = (axis.y * axis.y) * (1 - std::cos(angle)) + std::cos(angle);
+	rotateMatrix.m[1][2] = axis.y * (axis.z * (1 - std::cos(angle))) + (axis.x * std::sin(angle));
+
+	rotateMatrix.m[2][0] = axis.x * (axis.z * (1 - std::cos(angle))) + (axis.y * std::sin(angle));
+	rotateMatrix.m[2][1] = axis.y * (axis.z * (1 - std::cos(angle))) - (axis.x * std::sin(angle));
+	rotateMatrix.m[2][2] = (axis.z * axis.z) * (1 - std::cos(angle)) + std::cos(angle);
+
+	return rotateMatrix;
+}
+
+static const int kRowHeight = 20;
+static const int kColumnWidth = 60;
+void MatrixScreenPrintf(int x, int y, const Matrix4x4& matrix, const char* label) {
+	Novice::ScreenPrintf(x, y, "%s", label);
+	for (int row = 0; row < 4; ++row) {
+		for (int column = 0; column < 4; ++column) {
+			Novice::ScreenPrintf(
+				x + column * kColumnWidth, y + (row + 1) * kRowHeight, "%6.03f",
+				matrix.m[row][column]);
+		}
+	}
+}
+
 
 // Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	// ライブラリの初期化
-	Novice::Initialize(kWindowTitle, 1280, 720);
+	const int kWindowWidth = 1280;
+	const int kWindowHeight = 720;
+	Novice::Initialize(kWindowTitle, kWindowWidth, kWindowHeight);
 
 	// キー入力結果を受け取る箱
-	char keys[256] = {0};
-	char preKeys[256] = {0};
+	char keys[256] = { 0 };
+	char preKeys[256] = { 0 };
 
 	// ウィンドウの×ボタンが押されるまでループ
 	while (Novice::ProcessMessage() == 0) {
@@ -25,6 +85,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		/// ↓更新処理ここから
 		///
 
+		Vector3 axis = Normalize(Vector3{ 1.0f, 1.0f, 1.0f });
+		float angle = 0.44f;
+		Matrix4x4 rotateMatrix = MakeRotateAxisAngle(axis, angle);
+
 		///
 		/// ↑更新処理ここまで
 		///
@@ -32,6 +96,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		///
 		/// ↓描画処理ここから
 		///
+
+		MatrixScreenPrintf(0, 0, rotateMatrix, "rotateMatrix");
 
 		///
 		/// ↑描画処理ここまで
