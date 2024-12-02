@@ -47,6 +47,18 @@ Quaternion slerp(const Quaternion& q1, const Quaternion& q2, float t) {
 		dot = -dot;
 	}
 
+	const float epsilon = 0.0005f; // ゼロ割防止用
+	if (dot >= 1.0f - epsilon) {
+		// ほぼ同じ方向の場合、線形補間を使用
+		Quaternion result;
+		result.x = q2.x * (1.0f - t) + aq0.x * t;
+		result.y = q2.y * (1.0f - t) + aq0.y * t;
+		result.z = q2.z * (1.0f - t) + aq0.z * t;
+		result.w = q2.w * (1.0f - t) + aq0.w * t;
+
+		return { result.x,result.y,result.z,result.w };
+	}
+
 	// 角
 	float theta = std::acos(dot);
 	float sinTheta = std::sin(theta);
@@ -125,7 +137,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		///
 
 		Quaternion rotation0 = MakeRotateAxisAngleQuaternion({ 0.71f,0.71f,0.0f }, 0.3f);
-		Quaternion rotation1 = MakeRotateAxisAngleQuaternion({ 0.71f,0.0f,0.71f }, 3.141592f);
+		Quaternion rotation1 = { -rotation0.x,-rotation0.y,-rotation0.z,-rotation0.w };
 		Quaternion interpolate0 = slerp(rotation0, rotation1, 0.0f);
 		Quaternion interpolate1 = slerp(rotation0, rotation1, 0.3f);
 		Quaternion interpolate2 = slerp(rotation0, rotation1, 0.5f); 
