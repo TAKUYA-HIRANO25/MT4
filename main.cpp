@@ -16,47 +16,50 @@ struct Matrix4x4 {
 	float m[4][4];
 };
 
+Quaternion MakeRotateAxisAngleQuaternion(const Vector3& axis, float angle) {
+	Quaternion result;
+	// 回転角度の半分を計算
+	float halfAngle = angle * 0.5f;
+
+	// sin(半分の角度) と cos(半分の角度) を計算
+	float sinHalfAngle = sinf(halfAngle);
+	float cosHalfAngle = cosf(halfAngle);
+
+	// クォータニオンの成分を計算
+	result.x = axis.x * sinHalfAngle;
+	result.y = axis.y * sinHalfAngle;
+	result.z = axis.z * sinHalfAngle;
+	result.w = cosHalfAngle;
+
+	return result;
+}
+
 
 Quaternion slerp(const Quaternion& q1, const Quaternion& q2, float t) {
 	float dot = q1.w * q2.w + q1.x * q2.x + q1.y * q2.y + q1.z * q2.z;
 	Quaternion aq0 = q1;
-	float aDot = dot;
 	if (dot < 0) {
 		aq0.x = -q1.x;
 		aq0.y = -q1.y;
 		aq0.z = -q1.z;
 		aq0.w = -q1.w;
 
-		dot = -aDot;
+		dot = -dot;
 	}
 
-	// なす角を求める
-	const float epsilon = 1e-6f; // ゼロ割防止用の閾値
-	if (dot > 1.0f - epsilon) {
-		// ほぼ同じ方向の場合、線形補間を使用
-		Quaternion result;
-		result.w = q1.w * (1.0f - t) + aq0.w * t;
-		result.x = q1.x * (1.0f - t) + aq0.x * t;
-		result.y = q1.y * (1.0f - t) + aq0.y * t;
-		result.z = q1.z * (1.0f - t) + aq0.z * t;
-		// 正規化して返す
-		float length = result.w * result.w + result.x * result.x + result.y * result.y + result.z * result.z;
-		return { result.w / length, result.x / length, result.y / length, result.z / length };
-	}
-
-	// なす角
+	// 角
 	float theta = std::acos(dot);
 	float sinTheta = std::sin(theta);
 
-	// 補間係数を計算
+	// 補間係数
 	float scale0 = std::sin((1.0f - t) * theta) / sinTheta;
 	float scale1 = std::sin(t * theta) / sinTheta;
 
 	return {
-		aq0.x * scale0 + q1.x * scale1,
-		aq0.y * scale0 + q1.y * scale1,
-		aq0.z * scale0 + q1.z * scale1,
-		aq0.w * scale0 + q1.w * scale1
+		aq0.x * scale0 + q2.x * scale1,
+		aq0.y * scale0 + q2.y * scale1,
+		aq0.z * scale0 + q2.z * scale1,
+		aq0.w * scale0 + q2.w * scale1
 	};
 }
 
@@ -102,10 +105,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	char keys[256] = { 0 };
 	char preKeys[256] = { 0 };
 
-	Vector3 v1{ 1.0f, 3.0f, -5.0f };
-	Vector3 v2{ 4.0f, -1.0f, 2.0f };
-	float k = { 4.0f };
-
 	// ウィンドウの×ボタンが押されるまでループ
 	while (Novice::ProcessMessage() == 0) {
 		// フレームの開始
@@ -119,16 +118,25 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		/// ↓更新処理ここから
 		///
 
-
-		///
-		/// ↑更新処理ここまで
 		///
 
 		///
 		/// ↓描画処理ここから
 		///
 
-		Quaternion rotation0 = Make
+		Quaternion rotation0 = MakeRotateAxisAngleQuaternion({ 0.71f,0.71f,0.0f }, 0.3f);
+		Quaternion rotation1 = MakeRotateAxisAngleQuaternion({ 0.71f,0.0f,0.71f }, 3.141592f);
+		Quaternion interpolate0 = slerp(rotation0, rotation1, 0.0f);
+		Quaternion interpolate1 = slerp(rotation0, rotation1, 0.3f);
+		Quaternion interpolate2 = slerp(rotation0, rotation1, 0.5f); 
+		Quaternion interpolate3 = slerp(rotation0, rotation1, 0.7f);
+		Quaternion interpolate4 = slerp(rotation0, rotation1, 1.0f);
+
+		QuaternionScreenPrintf(0, kRowHeight * 0, interpolate0, " : interpolate0, Slerp(q0, q1, 0.0f)");
+		QuaternionScreenPrintf(0, kRowHeight * 1, interpolate1, " : interpolate1, Slerp(q0, q1, 0.3f)");
+		QuaternionScreenPrintf(0, kRowHeight * 2, interpolate2, " : interpolate2, Slerp(q0, q1, 0.5f)");
+		QuaternionScreenPrintf(0, kRowHeight * 3, interpolate3, " : interpolate3 Slerp(q0, q1, 0.7f)");
+		QuaternionScreenPrintf(0, kRowHeight * 4, interpolate4, " : interpolate4, Slerp(q0, q1, 1.0f)");
 
 		///
 		/// ↑描画処理ここまで
